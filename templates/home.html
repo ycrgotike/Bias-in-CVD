@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Heart Disease Predictor</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg: #0a0c0f;
+            --surface: #111318;
+            --surface2: #181c23;
+            --border: rgba(255,255,255,0.07);
+            --accent: #e8304a;
+            --accent2: #ff6b6b;
+            --green: #2dce89;
+            --text: #e8eaf0;
+            --muted: #5a6070;
+            --label: #8892a0;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'DM Mono', monospace;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(232,48,74,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(232,48,74,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            top: -20%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(232,48,74,0.08) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .wrapper {
+            position: relative;
+            z-index: 1;
+            max-width: 780px;
+            margin: 0 auto;
+            padding: 48px 24px 80px;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 48px;
+            animation: fadeDown 0.6s ease both;
+        }
+
+        .header-icon {
+            width: 52px;
+            height: 52px;
+            background: linear-gradient(135deg, var(--accent), #c0213a);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 0 30px rgba(232,48,74,0.3);
+            flex-shrink: 0;
+        }
+
+        .header-text h1 {
+            font-family: 'Syne', sans-serif;
+            font-size: 26px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: var(--text);
+            line-height: 1;
+        }
+
+        .header-text p {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 5px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .status-badge {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(45,206,137,0.08);
+            border: 1px solid rgba(45,206,137,0.2);
+            border-radius: 20px;
+            padding: 6px 14px;
+            font-size: 11px;
+            color: var(--green);
+            letter-spacing: 0.05em;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            background: var(--green);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .ecg-line {
+            width: 100%;
+            height: 40px;
+            margin-bottom: 36px;
+            opacity: 0.4;
+            animation: fadeIn 1s ease 0.3s both;
+        }
+
+        .section-label {
+            font-size: 10px;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-label::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 32px;
+            margin-bottom: 16px;
+            animation: fadeUp 0.5s ease both;
+            overflow: hidden;       /* ← prevents children from escaping */
+            min-width: 0;           /* ← prevents grid blowout */
+        }
+
+        .card:nth-child(2) { animation-delay: 0.1s; }
+        .card:nth-child(3) { animation-delay: 0.2s; }
+
+        /* Grid */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+
+        @media (max-width: 600px) {
+            .grid-2, .grid-3 { grid-template-columns: 1fr; }
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 0;           /* ← key fix: allows field to shrink */
+        }
+
+        .field label {
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--label);
+        }
+
+        .field input,
+        .field select {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            font-family: 'DM Mono', monospace;
+            font-size: 13px;
+            padding: 12px 14px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            appearance: none;
+            -webkit-appearance: none;
+            width: 100%;            /* ← always fill the column */
+            min-width: 0;           /* ← don't force intrinsic width */
+        }
+
+        .field select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235a6070' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            padding-right: 36px;
+            cursor: pointer;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;    /* ← long option text won't expand the box */
+        }
+
+        .field input:focus,
+        .field select:focus {
+            border-color: rgba(232,48,74,0.5);
+            box-shadow: 0 0 0 3px rgba(232,48,74,0.08);
+        }
+
+        .field input::placeholder { color: var(--muted); }
+        .field select option { background: #1a1e26; }
+
+        .range-wrapper { position: relative; }
+        .range-value {
+            position: absolute;
+            right: 0;
+            top: -24px;
+            font-size: 13px;
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: var(--surface2);
+            border-radius: 4px;
+            border: 1px solid var(--border) !important;
+            padding: 10px 0 !important;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--accent);
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(232,48,74,0.4);
+        }
+
+        .toggle-group { display: flex; gap: 8px; }
+        .toggle-group input { display: none; }
+
+        .toggle-group label {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--muted);
+            transition: all 0.2s;
+        }
+
+        .toggle-group input:checked + label {
+            border-color: var(--accent);
+            background: rgba(232,48,74,0.1);
+            color: var(--accent2);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--accent), #c0213a);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-family: 'Syne', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+            margin-top: 8px;
+            box-shadow: 0 4px 20px rgba(232,48,74,0.25);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .submit-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .submit-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 30px rgba(232,48,74,0.35); }
+        .submit-btn:hover::before { opacity: 1; }
+        .submit-btn:active { transform: translateY(0); }
+
+        .result-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 28px 32px;
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            animation: fadeUp 0.4s ease both;
+        }
+
+        .result-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            flex-shrink: 0;
+        }
+
+        .result-icon.positive { background: rgba(232,48,74,0.12); border: 1px solid rgba(232,48,74,0.2); }
+        .result-icon.negative { background: rgba(45,206,137,0.12); border: 1px solid rgba(45,206,137,0.2); }
+
+        .result-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); }
+        .result-value { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; margin-top: 4px; }
+
+        .disclaimer {
+            margin-top: 24px;
+            padding: 16px 20px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 11px;
+            color: var(--muted);
+            line-height: 1.6;
+            letter-spacing: 0.01em;
+        }
+
+        @keyframes fadeDown {
+            from { opacity: 0; transform: translateY(-16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 0.4; }
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+
+    <div class="header">
+        <div class="header-icon">♥</div>
+        <div class="header-text">
+            <h1>CardioRisk AI</h1>
+            <p>Cardiovascular Disease Prediction System</p>
+        </div>
+        <div class="status-badge">
+            <span class="status-dot"></span>
+            Model Active
+        </div>
+    </div>
+
+    <svg class="ecg-line" viewBox="0 0 780 40" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+        <polyline
+            points="0,20 60,20 80,20 90,5 100,35 110,5 120,20 160,20 180,20 190,10 200,30 210,20 260,20 280,20 290,8 300,32 310,8 320,20 380,20 400,20 410,6 420,34 430,6 440,20 500,20 520,20 530,10 540,30 550,20 600,20 620,20 630,7 640,33 650,7 660,20 720,20 780,20"
+            stroke="url(#ecg-grad)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <defs>
+            <linearGradient id="ecg-grad" x1="0" y1="0" x2="780" y2="0" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#e8304a" stop-opacity="0"/>
+                <stop offset="30%" stop-color="#e8304a"/>
+                <stop offset="70%" stop-color="#e8304a"/>
+                <stop offset="100%" stop-color="#e8304a" stop-opacity="0"/>
+            </linearGradient>
+        </defs>
+    </svg>
+
+    <form action="{{ url_for('predict_datapoint') }}" method="post">
+
+        <!-- Section 1: Patient Demographics -->
+        <p class="section-label">01 — Patient Demographics</p>
+        <div class="card">
+            <div class="grid-2">
+                <div class="field">
+                    <label>Age <span class="range-value" id="age-val">45 yrs</span></label>
+                    <div class="range-wrapper">
+                        <input type="range" name="Age" id="age-range" min="28" max="77" value="45"
+                               oninput="document.getElementById('age-val').textContent = this.value + ' yrs'">
+                    </div>
+                </div>
+                <div class="field">
+                    <label>Biological Sex</label>
+                    <div class="toggle-group">
+                        <input type="radio" name="Sex" id="sex-m" value="M" checked>
+                        <label for="sex-m">♂ Male</label>
+                        <input type="radio" name="Sex" id="sex-f" value="F">
+                        <label for="sex-f">♀ Female</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 2: Clinical Measurements -->
+        <p class="section-label">02 — Clinical Measurements</p>
+        <div class="card">
+            <div class="grid-3">
+                <div class="field">
+                    <label>Resting BP (mmHg)</label>
+                    <input type="number" name="RestingBP" placeholder="e.g. 120" min="0" max="200" required>
+                </div>
+                <div class="field">
+                    <label>Cholesterol (mg/dl)</label>
+                    <input type="number" name="Cholesterol" placeholder="e.g. 200" min="0" max="603" required>
+                </div>
+                <div class="field">
+                    <label>Max Heart Rate</label>
+                    <input type="number" name="MaxHR" placeholder="e.g. 150" min="60" max="202" required>
+                </div>
+                <div class="field">
+                    <label>Oldpeak (ST depression)</label>
+                    <input type="number" name="Oldpeak" placeholder="e.g. 1.0" min="-2.6" max="6.2" step="0.1" required>
+                </div>
+                <div class="field">
+                    <label>Fasting Blood Sugar</label>
+                    <div class="toggle-group">
+                        <input type="radio" name="FastingBS" id="fbs-0" value="0" checked>
+                        <label for="fbs-0">≤ 120</label>
+                        <input type="radio" name="FastingBS" id="fbs-1" value="1">
+                        <label for="fbs-1">> 120</label>
+                    </div>
+                </div>
+                <div class="field">
+                    <label>Exercise Angina</label>
+                    <div class="toggle-group">
+                        <input type="radio" name="ExerciseAngina" id="ea-n" value="N" checked>
+                        <label for="ea-n">No</label>
+                        <input type="radio" name="ExerciseAngina" id="ea-y" value="Y">
+                        <label for="ea-y">Yes</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 3: Diagnostic Findings — grid-2 so dropdowns don't overflow -->
+        <p class="section-label">03 — Diagnostic Findings</p>
+        <div class="card">
+            <div class="grid-2">                     <!-- ← changed from grid-3 to grid-2 -->
+                <div class="field">
+                    <label>Chest Pain Type</label>
+                    <select name="ChestPainType" required>
+                        <option disabled selected value="">Select type</option>
+                        <option value="ATA">ATA — Atypical Angina</option>
+                        <option value="NAP">NAP — Non-Anginal Pain</option>
+                        <option value="ASY">ASY — Asymptomatic</option>
+                        <option value="TA">TA — Typical Angina</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Resting ECG</label>
+                    <select name="RestingECG" required>
+                        <option disabled selected value="">Select result</option>
+                        <option value="Normal">Normal</option>
+                        <option value="ST">ST — T wave abnormality</option>
+                        <option value="LVH">LVH — Left ventricular hypertrophy</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>ST Slope</label>
+                    <select name="ST_Slope" required>
+                        <option disabled selected value="">Select slope</option>
+                        <option value="Up">Upsloping</option>
+                        <option value="Flat">Flat</option>
+                        <option value="Down">Downsloping</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="submit-btn">
+            ⚡ &nbsp; Run Prediction Analysis
+        </button>
+
+    </form>
+
+    <!-- Result block -->
+    {% if results is not none %}
+    <div class="result-box">
+        {% if results == 1 %}
+        <div class="result-icon positive">⚠️</div>
+        <div>
+            <div class="result-label">Prediction Result</div>
+            <div class="result-value" style="color: var(--accent2);">Heart Disease Detected</div>
+        </div>
+        {% else %}
+        <div class="result-icon negative">✓</div>
+        <div>
+            <div class="result-label">Prediction Result</div>
+            <div class="result-value" style="color: var(--green);">No Heart Disease Detected</div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="disclaimer">
+        ⚠ &nbsp; This tool is for research and educational purposes only. Predictions are generated by a machine learning model
+        and should not be used as a substitute for professional medical advice, diagnosis, or treatment.
+        Always consult a qualified healthcare provider.
+    </div>
+
+</div>
+
+</body>
+</html>
