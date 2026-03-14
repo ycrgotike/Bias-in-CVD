@@ -509,9 +509,11 @@
         <li><a href="#">Overview</a></li>
         <li><a href="#">Dataset</a></li>
         <li><a href="#">Model</a></li>
-        <li><a href="{{ url_for('predict_datapoint') }}" class="nav-cta">Run Prediction →</a></li>
+        <li><a href="{{ url_for('predict_datapoint') }}" class="nav-cta">General Prediction →</a></li>
+        <li><a href="{{ url_for('female_predict') }}" class="nav-cta">Female Prediction →</a></li>
     </ul>
 </nav>
+
 
 <!-- HERO -->
 <section class="hero">
@@ -529,7 +531,10 @@
 
     <div class="hero-actions">
         <a href="{{ url_for('predict_datapoint') }}" class="btn-primary">
-            ⚡ Start Prediction
+            ⚡ General Prediction
+        </a>
+        <a href="{{ url_for('female_predict') }}" class="btn-primary">
+            ⚡ Female Prediction
         </a>
         <a href="#how-it-works" class="btn-secondary">
             ↓ How it works
@@ -644,6 +649,9 @@
         </div>
         <a href="{{ url_for('predict_datapoint') }}" class="btn-primary">
             ⚡ &nbsp; Run Prediction →
+        </a>
+        <a href="{{ url_for('female_predict') }}" class="btn-primary">
+            ⚡ &nbsp; Female Prediction →
         </a>
     </div>
 </div>

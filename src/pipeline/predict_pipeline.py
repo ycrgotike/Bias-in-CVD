@@ -23,6 +23,25 @@ class PredictPipeline:
         
         except Exception as e:
             raise CustomException(e,sys)
+        
+    def femalepredict(self,features):
+        try:
+            female_model_path=os.path.join("artifacts","female_model.pkl")
+            preprocessor_path=os.path.join('artifacts','preprocessor.pkl')
+
+            print("Before Loading Female Model")
+            model=load_object(file_path=female_model_path)
+            preprocessor=load_object(file_path=preprocessor_path)
+            print("After Loading Female Model")
+            data_scaled=preprocessor.transform(features)
+            # same 4 feature indices used in female trainer
+            feature_indices=[0,4,5,11]  
+            data_scaled=data_scaled[:,feature_indices]
+            preds=model.predict(data_scaled)
+            return preds
+        
+        except Exception as e:
+            raise CustomException(e,sys)
 
 
 class CustomData:

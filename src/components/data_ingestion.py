@@ -13,6 +13,9 @@ from src.components.data_transformation import DataTransformationConfig
 from src.components.model_trainer import ModelTrainer
 from src.components.model_trainer import ModelTrainerConfig
 
+from src.components.female_model_trainer import FemaleModelTrainer
+from src.components.female_model_trainer import FemaleModelTrainerConfig
+
 
 #for ingesting
 @dataclass
@@ -63,4 +66,9 @@ if __name__ == "__main__":
 
     model_trainer = ModelTrainer()
     print(model_trainer.initiate_model_trainer(train_arr,test_arr))
+
+    female_model_trainer = FemaleModelTrainer()
+    print(female_model_trainer.initiate_female_model_trainer(train_arr,test_arr))
+
+
 
